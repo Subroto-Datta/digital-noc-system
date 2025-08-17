@@ -1,167 +1,71 @@
-# Digital NOC System 🎓
+🚀 Digital NOC System
 
-A comprehensive web-based platform designed to streamline NOC (No Objection Certificate) requests and approval workflows across academic departments. This system digitizes the traditional paper-based NOC process, making it more efficient, transparent, and accessible for students and administrators.
+    A web-based application built using the MERN stack to streamline the process of generating, tracking, and managing No Objection Certificates (NOCs) within an academic department.
 
-## ✨ Features
+This MVP (Minimum Viable Product) is being developed for the IT Department of K.J. Somaiya Institute of Technology as a 5-month minor project.
 
-- **Digital NOC Requests**: Submit and track NOC requests online
-- **Multi-Department Support**: Handle requests across different academic departments
-- **Real-time Tracking**: Monitor request status and approval progress
-- **User-friendly Interface**: Intuitive React-based frontend
-- **Secure Backend**: Robust Node.js/Express.js API
-- **Database Management**: MongoDB Atlas for reliable data storage
+📌 Features
 
-## 🚀 Tech Stack
+🔐 User Authentication – JWT-based login/signup
+📝 NOC Management – Create, Read, Update, Delete NOC requests
+🎛️ Role-based Access – Students, Faculty, and Admins (future scope)
+📊 Dashboard View – Track the status of NOC applications
+☁️ Scalable Backend – MongoDB Atlas, Express, Node.js
+🎨 Frontend (React) – Clean UI for form submission & tracking
 
-### Frontend
-- **React.js** - Modern UI framework for building interactive user interfaces
-- **Tailwind CSS** - Utility-first CSS framework for rapid UI development
-- **Axios** - HTTP client for API communication
+🏗️ Tech Stack
+Frontend: React.js, Axios, Tailwind CSS (UI)
+Backend: Node.js, Express.js
+Database: MongoDB Atlas (Mongoose ORM)
+Authentication: JWT + bcrypt
+Version Control: Git & GitHub
 
-### Backend
-- **Node.js** - JavaScript runtime environment
-- **Express.js** - Web application framework
-- **MongoDB Atlas** - Cloud-based NoSQL database
-- **Mongoose** - MongoDB object modeling tool
-
-### Development Tools
-- **GitHub** - Version control and collaboration
-- **Nodemon** - Development server with auto-restart
-
-## 📋 Prerequisites
-
-Before running this application, make sure you have the following installed:
-
-- **Node.js** (v14 or higher)
-- **npm** or **yarn**
-- **MongoDB Atlas** account (for database)
-
-## 🛠️ Installation & Setup
-
-### 1. Clone the Repository
-```bash
-git clone <repository-url>
+⚙️ Installation & Setup
+1. Clone the repo
+git clone https://github.com/<your-username>/digital-noc-system.git
 cd digital-noc-system
-```
 
-### 2. Backend Setup
-```bash
-cd server
+2. Backend Setup
+cd backend
 npm install
-```
 
-### 3. Environment Configuration
-Create a `.env` file in the server directory:
-```env
+Create a .env file inside backend/ and add:
 PORT=5000
-MONGODB_URI=your_mongodb_atlas_connection_string
-```
+MONGO_URI=<your-mongodb-atlas-uri>
+JWT_SECRET=<your-secret-key>
 
-### 4. Start the Backend Server
-```bash
-npm run dev
-```
-The server will start on `http://localhost:5000`
 
-### 5. Frontend Setup (when available)
-```bash
-cd client
-npm install
+Run the backend:
 npm start
-```
 
-## 📚 API Documentation
+3. Frontend Setup
+cd frontend
+npm install
+npm run dev
 
-### NOC Request Endpoints
+📡 API Endpoints
+🔐 Auth Routes
+POST /auth/signup → Register new user
+POST /auth/login → Login & return JWT
 
-#### Create NOC Request
-- **POST** `/noc/create`
-- **Description**: Submit a new NOC request
-- **Request Body**:
-```json
-{
-  "studentName": "Subroto Datta",
-  "rollNo": "21IT001",
-  "department": "IT",
-  "purpose": "Internship at TCS"
-}
-```
+📝 NOC Routes
+POST /noc → Create NOC request
+GET /noc → Get all NOC requests
+GET /noc/:id → Get specific NOC request
+PUT /noc/:id → Update NOC request
+DELETE /noc/:id → Delete NOC request
 
-#### Get All NOC Requests
-- **GET** `/noc/all`
-- **Description**: Retrieve all NOC requests
+🤝 Contribution Workflow
+We follow GitHub Flow:
+Create a new branch from dev
+Commit changes with clear messages
+Open a Pull Request to dev
+After review → merge to main
 
-#### Get NOC Request by ID
-- **GET** `/noc/:id`
-- **Description**: Retrieve a specific NOC request
+👨‍💻 Contributors
 
-#### Update NOC Request
-- **PUT** `/noc/:id`
-- **Description**: Update an existing NOC request
-
-#### Delete NOC Request
-- **DELETE** `/noc/:id`
-- **Description**: Delete a NOC request
-
-## 🏗️ Project Structure
-
-```
-digital-noc-system/
-├── client/                 # React frontend (to be implemented)
-├── server/                 # Node.js backend
-│   ├── config/            # Database configuration
-│   ├── controllers/       # Request handlers
-│   ├── middlewares/       # Custom middleware
-│   ├── models/           # MongoDB schemas
-│   ├── routes/           # API route definitions
-│   └── index.js          # Server entry point
-├── docs/                 # Documentation
-│   └── API_Structure.md  # API documentation
-└── README.md             # Project documentation
-```
-
-## 🚀 Usage
-
-1. **Start the Backend Server**:
-   ```bash
-   cd server
-   npm run dev
-   ```
-
-2. **Access the API**:
-   - Base URL: `http://localhost:5000`
-   - API endpoints: `/noc/*`
-
-3. **Submit NOC Request**:
-   Use the API endpoints to create, read, update, and delete NOC requests.
-
-## 🤝 Contributing
-
-We welcome contributions! Please follow these steps:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 👥 Contributors
-
-This project is developed by:
-
-- **Subroto Datta** - Project Lead & Full Stack Developer
-- **Malaika Yadav** - Frontend Developer
-- **Udita Pandya** - Backend Developer
-- **Swati Tiwari** - UI/UX Designer
-
-## 📄 License
-
-This project is licensed under the ISC License.
-
-## 📞 Support
-
-For support and questions, please contact the development team or create an issue in the repository.
-
----
-
-**Made with ❤️ by the Digital NOC System Team**
+Subroto Datta (Backend & Frontend Integration)
+Swati Tiwari
+Udita Pandya
+Malaika Yadav
+Guide: Mrs. Sarita Rathod, K.J. Somaiya Institute of Technology
