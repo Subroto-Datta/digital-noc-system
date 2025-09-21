@@ -15,6 +15,10 @@ const NocRequestSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  description: {
+    type: String,
+    required: true,
+  },
   // This provides a clear status for the request's workflow.
   status: {
     type: String,

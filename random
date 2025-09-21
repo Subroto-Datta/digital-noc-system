@@ -1,0 +1,31 @@
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4YWFhNzM2Yjg3ZDUzZDliM2QxOTE5NyIsImVtYWlsIjoic3R1ZGVudDFAZ21haWwuY29tIiwicm9sZSI6InN0dWRlbnQiLCJpYXQiOjE3NTYwMTQ0ODYsImV4cCI6MTc1NjAxODA4Nn0.WYzwTf0Mb74FBxCTUGRJDf_hQn0tgaBfSO8tF31CPTU",
+  "user": {
+    "id": "68aaa736b87d53d9b3d19197",
+    "name": "Student One",
+    "email": "student1@gmail.com",
+    "role": "student"
+  }
+}
+
+Inside that directory, you can run several commands:
+
+  npm start
+    Starts the development server.
+
+  npm run build
+    Bundles the app into static files for production.
+
+  npm test
+    Starts the test runner.
+
+  npm run eject
+    Removes this tool and copies build dependencies, configuration files
+    and scripts into the app directory. If you do this, you can’t go back!
+
+We suggest that you begin by typing:
+
+  cd frontend
+  npm start
+
+Happy hacking!
