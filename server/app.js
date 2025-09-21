@@ -15,6 +15,8 @@ app.use(express.json());
 // Routes
 app.use('/auth', authRoutes);
 app.use('/noc', authenticationMiddleware, nocRoutes);
+// app.use("/profile", require("./routes/profile"));
+
 
 // A simple test route
 app.get('/api/test', (req, res) => {

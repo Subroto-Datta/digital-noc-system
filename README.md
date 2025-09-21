@@ -49,11 +49,11 @@ POST /auth/signup → Register new user
 POST /auth/login → Login & return JWT
 
 📝 NOC Routes
-POST /noc → Create NOC request
+POST /noc/create → Create NOC request
 GET /noc → Get all NOC requests
-GET /noc/:id → Get specific NOC request
-PUT /noc/:id → Update NOC request
-DELETE /noc/:id → Delete NOC request
+GET /noc/user/:id → Get specific NOC request
+PUT /noc/update/:id → Update NOC request
+DELETE /noc/delete/:id → Delete NOC request
 
 🤝 Contribution Workflow
 We follow GitHub Flow:

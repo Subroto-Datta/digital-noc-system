@@ -1,18 +1,27 @@
 const NocRequest = require('../models/NocRequest');
 
 const createNoc = async (req, res) => {
-  const { department, purpose } = req.body;
-  const studentId = req.user.id;
+  try {
+    const { title, department, purpose, description, status } = req.body;
+    const studentId = req.user.id;
 
-  const newNOC = new NocRequest({
-    student: studentId,
-    department,
-    purpose,
-  });
+    const newNOC = new NocRequest({
+      student: studentId,
+      title,
+      department,
+      purpose,
+      description,
+      status: status || "Pending",
+    });
 
-  const savedNoc = await newNOC.save();
-  res.status(201).json(savedNoc);
+    const savedNoc = await newNOC.save();
+    res.status(201).json(savedNoc);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to create NOC" });
+  }
 };
+
 
 const getNocById = async (req, res) => {
   const noc = await NocRequest.findById(req.params.id).populate('student', 'name email');
