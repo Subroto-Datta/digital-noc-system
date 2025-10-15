@@ -6,6 +6,21 @@
 3. MongoDB Atlas database (already configured)
 4. Google OAuth credentials (already configured)
 
+## Pre-Deployment Testing (Recommended)
+
+Test the build process locally before deploying:
+
+```bash
+# Test the exact build process Render will use
+npm run install:all
+npm run build:frontend
+
+# Test the production server locally
+npm run start:production
+```
+
+If any of these fail locally, fix the issues before deploying to Render.
+
 ## Deployment Steps
 
 ### Deploy as Single Full-Stack Application (Recommended)
@@ -22,6 +37,12 @@
    - **Build Command**: `npm run install:all && npm run build:frontend`
    - **Start Command**: `npm run start:production`
    - **Plan**: Free
+
+**Alternative Build Commands (if the default fails):**
+- **Option 1**: `npm install && cd backend && npm install && cd ../frontend && npm install && npm run build`
+- **Option 2**: `npm ci && npm run install:all && npm run build:frontend`
+- **Option 3**: `npm install --production=false && npm run build:frontend`
+- **Option 4**: `yarn install && yarn build:frontend` (if using Yarn)
 
 #### Step 2: Add Environment Variables
 In your service settings, add these environment variables:
@@ -94,8 +115,15 @@ node scripts/create-admin.js
 
 1. **Build Failure**
    - Check build logs in Render dashboard
+   - Try alternative build commands (see Step 1 above)
    - Ensure all dependencies are listed in package.json files
    - Verify Node.js version compatibility
+   
+   **Build Command Troubleshooting:**
+   - If "npm run install:all" fails → Try Option 1: `npm install && cd backend && npm install && cd ../frontend && npm install && npm run build`
+   - If permission errors → Try Option 2: `npm ci && npm run install:all && npm run build:frontend`
+   - If dev dependencies missing → Try Option 3: `npm install --production=false && npm run build:frontend`
+   - If npm cache issues → Clear build cache in Render and try Option 2
 
 2. **Database Connection Issues**
    - Verify MongoDB Atlas connection string
@@ -164,3 +192,29 @@ node scripts/create-admin.js
 | `FRONTEND_URL` | Frontend URL for CORS | Optional |
 
 Your Digital NOC Management System is now ready for production! 🚀
+
+## Backup Deployment Strategy
+
+If the full-stack deployment fails, you can deploy backend and frontend separately:
+
+### Backend Only Deployment
+```
+Name: digital-noc-backend
+Environment: Node
+Root Directory: backend
+Build Command: npm install
+Start Command: npm start
+```
+
+### Frontend Only Deployment  
+```
+Type: Static Site
+Name: digital-noc-frontend
+Root Directory: frontend
+Build Command: npm install && npm run build
+Publish Directory: build
+Environment Variables: 
+- REACT_APP_API_URL=https://digital-noc-backend.onrender.com
+```
+
+This approach requires updating CORS settings and may involve additional configuration.
