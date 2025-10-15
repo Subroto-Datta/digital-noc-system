@@ -52,24 +52,24 @@ const NOCDetails = () => {
   });
 
   useEffect(() => {
+    const fetchNOCRequest = async () => {
+      try {
+        const response = await axios.get(`/api/noc/${id}`);
+        setNocRequest(response.data.nocRequest);
+        setUpdateData({
+          status: response.data.nocRequest.status,
+          reviewComments: response.data.nocRequest.reviewComments || ''
+        });
+      } catch (error) {
+        console.error('Error fetching NOC request:', error);
+        setError('Failed to load NOC request');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchNOCRequest();
   }, [id]);
-
-  const fetchNOCRequest = async () => {
-    try {
-      const response = await axios.get(`/api/noc/${id}`);
-      setNocRequest(response.data.nocRequest);
-      setUpdateData({
-        status: response.data.nocRequest.status,
-        reviewComments: response.data.nocRequest.reviewComments || ''
-      });
-    } catch (error) {
-      console.error('Error fetching NOC request:', error);
-      setError('Failed to load NOC request');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleStatusUpdate = async (e) => {
     e.preventDefault();

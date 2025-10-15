@@ -58,10 +58,13 @@ const AdminDashboard = () => {
   });
 
   useEffect(() => {
-    fetchNOCRequests();
-    fetchStats();
-    fetchAnalytics();
-  }, [filters]);
+    const fetchData = async () => {
+      await fetchNOCRequests();
+      await fetchStats();
+      await fetchAnalytics();
+    };
+    fetchData();
+  }, [filters]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchNOCRequests = async () => {
     try {

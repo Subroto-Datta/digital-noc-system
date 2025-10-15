@@ -28,13 +28,16 @@ const Dashboard = () => {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (user && user._id) {
-      // Only fetch NOC requests for students
-      if (user.role === 'student') {
-        fetchNOCRequests();
+    const fetchData = async () => {
+      if (user && user._id) {
+        // Only fetch NOC requests for students
+        if (user.role === 'student') {
+          await fetchNOCRequests();
+        }
       }
-    }
-  }, [user]);
+    };
+    fetchData();
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Redirect faculty/admin to admin dashboard
   if (user && user.role !== 'student') {
