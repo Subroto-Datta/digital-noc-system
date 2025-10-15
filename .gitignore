@@ -180,3 +180,7 @@ data/
 *.backup
 *.bak
 *.tmp
+
+# Uploaded files (contains sensitive documents)
+backend/uploads/
+uploads/

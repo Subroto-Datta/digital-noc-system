@@ -24,7 +24,7 @@ app.use(limiter);
 // CORS configuration
 const allowedOrigins = [
   'http://localhost:3000',
-  'https://digital-noc-frontend.onrender.com',
+  'https://digital-noc-system.onrender.com', // Updated for full-stack deployment
   process.env.FRONTEND_URL
 ].filter(Boolean);
 
