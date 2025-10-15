@@ -15,7 +15,9 @@
     "test:backend": "cd backend && npm test",
     "test:frontend": "cd frontend && npm test",
     "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
-    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\""
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "build": "npm run install:all && npm run build:frontend",
+    "vercel-build": "npm run build"
   },
   "keywords": [
     "noc",
