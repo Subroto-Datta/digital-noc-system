@@ -17,7 +17,7 @@
     "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "build": "npm run build:frontend",
-    "start:production": "cd backend && npm run start:production"
+    "start:production": "cd backend && npm start"
   },
   "keywords": [
     "noc",
