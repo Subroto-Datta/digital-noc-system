@@ -56,7 +56,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Serve static files from React build in production
-if (process.env.NODE_ENV === 'production') {
+if (process.env.NODE_ENV === 'production' || process.env.RENDER) {
   // Serve static files from the React app build directory
   app.use(express.static(path.join(__dirname, '../frontend/build')));
   
