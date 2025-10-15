@@ -13,7 +13,7 @@ Test the build process locally before deploying:
 ```bash
 # Test the exact build process Render will use
 npm run install:all
-npm run build:frontend
+npm run build
 
 # Test the production server locally
 npm run start:production
@@ -34,15 +34,15 @@ If any of these fail locally, fix the issues before deploying to Render.
    - **Environment**: `Node`
    - **Branch**: `main`
    - **Root Directory**: (leave empty - uses root)
-   - **Build Command**: `npm run install:all && npm run build:frontend`
+   - **Build Command**: `npm run install:all && npm run build`
    - **Start Command**: `npm run start:production`
    - **Plan**: Free
 
 **Alternative Build Commands (if the default fails):**
-- **Option 1**: `npm install && cd backend && npm install && cd ../frontend && npm install && npm run build`
-- **Option 2**: `npm ci && npm run install:all && npm run build:frontend`
-- **Option 3**: `npm install --production=false && npm run build:frontend`
-- **Option 4**: `yarn install && yarn build:frontend` (if using Yarn)
+- **Option 1**: `npm install && npm run build`
+- **Option 2**: `npm ci && npm run install:all && npm run build`
+- **Option 3**: `npm install --production=false && npm run build`
+- **Option 4**: Manual: `npm install && cd backend && npm install && cd ../frontend && npm install && npm run build`
 
 #### Step 2: Add Environment Variables
 In your service settings, add these environment variables:
@@ -106,7 +106,7 @@ node scripts/create-admin.js
 
 **Build Process:**
 1. `npm run install:all` - Installs dependencies for root, backend, and frontend
-2. `npm run build:frontend` - Builds the React app to `frontend/build/`
+2. `npm run build` - Builds the React app to `frontend/build/`
 3. Backend serves static files from `frontend/build/` in production
 
 ## Troubleshooting
@@ -120,9 +120,9 @@ node scripts/create-admin.js
    - Verify Node.js version compatibility
    
    **Build Command Troubleshooting:**
-   - If "npm run install:all" fails → Try Option 1: `npm install && cd backend && npm install && cd ../frontend && npm install && npm run build`
-   - If permission errors → Try Option 2: `npm ci && npm run install:all && npm run build:frontend`
-   - If dev dependencies missing → Try Option 3: `npm install --production=false && npm run build:frontend`
+   - If "npm run install:all" fails → Try Option 1: `npm install && npm run build`
+   - If permission errors → Try Option 2: `npm ci && npm run install:all && npm run build`
+   - If dev dependencies missing → Try Option 3: `npm install --production=false && npm run build`
    - If npm cache issues → Clear build cache in Render and try Option 2
 
 2. **Database Connection Issues**
