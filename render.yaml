@@ -1,0 +1,38 @@
+services:
+  - type: web
+    name: digital-noc-backend
+    env: node
+    plan: free
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        fromDatabase:
+          name: noc-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: PORT
+        value: 10000
+
+  - type: web
+    name: digital-noc-frontend
+    env: static
+    plan: free
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: ./frontend/build
+    envVars:
+      - key: REACT_APP_API_URL
+        value: https://digital-noc-backend.onrender.com
+      - key: REACT_APP_GOOGLE_CLIENT_ID
+        sync: false
+
+databases:
+  - name: noc-db
+    databaseName: noc_management
+    user: nocuser
+    plan: free
