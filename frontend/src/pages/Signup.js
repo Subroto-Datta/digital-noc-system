@@ -509,7 +509,7 @@ const Signup = () => {
                     Admin
                   </Badge>
                   <span>IT department only - not available for signup</span>
-                </div>
+                   </div>
               </div>
             </div>
           </CardContent>
