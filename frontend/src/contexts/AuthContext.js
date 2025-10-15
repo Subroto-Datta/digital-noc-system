@@ -18,7 +18,12 @@ export const AuthProvider = ({ children }) => {
   // Configure axios defaults
   useEffect(() => {
     // Set base URL for API requests
-    axios.defaults.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+    // In production (full-stack), use relative URLs. In development, use localhost:5000
+    const apiUrl = process.env.NODE_ENV === 'production' && !process.env.REACT_APP_API_URL 
+      ? '' // Use relative URLs for same-domain deployment
+      : process.env.REACT_APP_API_URL || 'http://localhost:5000';
+    
+    axios.defaults.baseURL = apiUrl;
     
     const token = localStorage.getItem('token');
     if (token) {

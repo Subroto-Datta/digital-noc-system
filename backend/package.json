@@ -5,6 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
+    "start:production": "NODE_ENV=production node server.js",
     "dev": "nodemon server.js",
     "create-admin": "node scripts/create-admin.js",
     "create-additional-admin": "node scripts/create-additional-admin.js",

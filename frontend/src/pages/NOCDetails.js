@@ -137,7 +137,10 @@ const NOCDetails = () => {
       // Fallback: try direct URL approach
       try {
         const token = localStorage.getItem('token');
-        const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+        const apiUrl = process.env.NODE_ENV === 'production' && !process.env.REACT_APP_API_URL 
+          ? '' // Use relative URLs for same-domain deployment
+          : process.env.REACT_APP_API_URL || 'http://localhost:5000';
+        const baseURL = apiUrl;
         const viewUrl = `${baseURL}/api/noc/view/${filename}?token=${token}`;
         
         setDocumentViewer({ 

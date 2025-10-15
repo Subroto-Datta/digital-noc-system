@@ -1,4 +1,4 @@
-# Render Deployment Guide
+# Render Full-Stack Deployment Guide
 
 ## Prerequisites
 1. GitHub account with this repository
@@ -8,23 +8,25 @@
 
 ## Deployment Steps
 
-### Method 1: Using Render Dashboard (Recommended)
+### Deploy as Single Full-Stack Application (Recommended)
 
-#### Step 1: Deploy Backend
+#### Step 1: Create Web Service on Render
 1. Go to [Render Dashboard](https://dashboard.render.com/)
 2. Click "New +" → "Web Service"
-3. Connect your GitHub repository
-4. Configure:
-   - **Name**: `digital-noc-backend`
+3. Connect your GitHub repository: `digital-noc-system`
+4. Configure the service:
+   - **Name**: `digital-noc-system`
    - **Environment**: `Node`
    - **Branch**: `main`
-   - **Root Directory**: `backend`
-   - **Build Command**: `npm install`
-   - **Start Command**: `npm start`
+   - **Root Directory**: (leave empty - uses root)
+   - **Build Command**: `npm run install:all && npm run build:frontend`
+   - **Start Command**: `npm run start:production`
    - **Plan**: Free
 
-#### Step 2: Add Backend Environment Variables
-In your backend service settings, add these environment variables:
+#### Step 2: Add Environment Variables
+In your service settings, add these environment variables:
+
+**Required Variables:**
 ```
 NODE_ENV=production
 PORT=10000
@@ -33,74 +35,132 @@ JWT_SECRET=your_secure_jwt_secret_key
 GOOGLE_CLIENT_ID=your_google_oauth_client_id
 ```
 
-#### Step 3: Deploy Frontend
-1. Click "New +" → "Static Site"
-2. Connect the same GitHub repository
-3. Configure:
-   - **Name**: `digital-noc-frontend`
-   - **Branch**: `main`
-   - **Root Directory**: `frontend`
-   - **Build Command**: `npm install && npm run build`
-   - **Publish Directory**: `build`
-
-#### Step 4: Add Frontend Environment Variables
-In your frontend service settings, add:
+**Optional Variables:**
 ```
-REACT_APP_API_URL=https://your-backend-name.onrender.com
-REACT_APP_GOOGLE_CLIENT_ID=your_google_oauth_client_id
+FRONTEND_URL=https://digital-noc-system.onrender.com
 ```
 
-### Method 2: Using render.yaml (Blueprint)
-
-1. Copy the `render.yaml` file to your repository root
-2. Update the service names and environment variables
-3. Go to Render Dashboard → "New +" → "Blueprint"
-4. Connect your repository and deploy
+#### Step 3: Deploy and Monitor
+1. Click "Create Web Service"
+2. Render will automatically build and deploy your app
+3. Monitor the build logs for any issues
+4. Your app will be available at: `https://digital-noc-system.onrender.com`
 
 ## Post-Deployment Setup
 
-### 1. Create Admin User
+### 1. Update Google OAuth Settings
+Add your Render URL to Google OAuth:
+- **Authorized JavaScript origins**: `https://digital-noc-system.onrender.com`
+- **Authorized redirect URIs**: `https://digital-noc-system.onrender.com`
+
+### 2. Create Admin User
 After successful deployment, create an admin user:
 
+**Option A: Using Render Shell**
+1. Go to your service dashboard on Render
+2. Click "Shell" tab
+3. Run: `cd backend && node scripts/create-admin.js`
+
+**Option B: Locally (if needed)**
+Update your local `.env` file with production MongoDB URI and run:
 ```bash
-# SSH into your backend service (from Render dashboard)
-cd /opt/render/project/src/backend
+cd backend
 node scripts/create-admin.js
 ```
 
-Or use the web interface once deployed.
-
-### 2. Update Google OAuth
-Add your Render frontend URL to Google OAuth settings:
-- Frontend URL: `https://your-frontend-name.onrender.com`
-
 ### 3. Test Your Application
-1. Visit your frontend URL
+1. Visit `https://digital-noc-system.onrender.com`
 2. Test user registration and login
 3. Create a sample NOC request
 4. Verify document uploads work
 5. Test admin dashboard functionality
 
+## Architecture Overview
+
+**Full-Stack Deployment:**
+- Frontend (React) is built and served as static files by the backend
+- Backend (Express) serves both API routes (`/api/*`) and frontend files
+- Single domain for both frontend and backend
+- Simplified CORS configuration
+
+**Build Process:**
+1. `npm run install:all` - Installs dependencies for root, backend, and frontend
+2. `npm run build:frontend` - Builds the React app to `frontend/build/`
+3. Backend serves static files from `frontend/build/` in production
+
 ## Troubleshooting
 
 ### Common Issues:
-1. **Build fails**: Check build logs in Render dashboard
-2. **API not connecting**: Verify REACT_APP_API_URL matches your backend URL
-3. **Database connection**: Ensure MongoDB Atlas allows connections from 0.0.0.0/0
-4. **File uploads**: Render's filesystem is ephemeral - consider using cloud storage for production
 
-### Logs:
-- View logs in Render dashboard for each service
-- Backend logs show API requests and database connections
-- Frontend build logs show compilation issues
+1. **Build Failure**
+   - Check build logs in Render dashboard
+   - Ensure all dependencies are listed in package.json files
+   - Verify Node.js version compatibility
 
-## URLs After Deployment
-- Backend API: `https://digital-noc-backend.onrender.com`
-- Frontend App: `https://digital-noc-frontend.onrender.com`
-- Admin Dashboard: `https://digital-noc-frontend.onrender.com/admin`
+2. **Database Connection Issues**
+   - Verify MongoDB Atlas connection string
+   - Ensure MongoDB Atlas allows connections from `0.0.0.0/0`
+   - Check environment variables are set correctly
 
-## Free Tier Limitations
+3. **Frontend Not Loading**
+   - Verify build completed successfully
+   - Check that `frontend/build` directory exists after build
+   - Ensure static file serving is working in production mode
+
+4. **API Routes Not Working**
+   - Verify API routes start with `/api/`
+   - Check CORS configuration
+   - Monitor server logs for errors
+
+5. **File Uploads Failing**
+   - Note: Render's filesystem is ephemeral
+   - Files uploaded will be lost on service restart
+   - Consider using cloud storage (AWS S3, Cloudinary) for production
+
+### Viewing Logs:
+- **Build Logs**: Available during deployment in Render dashboard
+- **Runtime Logs**: Click "Logs" tab in your service dashboard
+- **Real-time Monitoring**: Logs update in real-time
+
+## Production Considerations
+
+### Free Tier Limitations:
 - Services spin down after 15 minutes of inactivity
 - First request after sleeping may take 30+ seconds
 - 750 build hours per month
-- Consider upgrading for production use
+- No persistent file storage
+
+### Recommended Upgrades:
+- **Starter Plan ($7/month)**: Always-on service, faster builds
+- **Cloud Storage**: For persistent file uploads
+- **CDN**: For faster static asset delivery
+
+## URLs and Endpoints
+
+**Application URL:** `https://digital-noc-system.onrender.com`
+
+**Key Pages:**
+- Home: `/`
+- Login: `/login`
+- Register: `/signup`
+- Dashboard: `/dashboard`
+- Admin: `/admin`
+- Create NOC: `/create-noc`
+
+**API Endpoints:**
+- Health Check: `/api/health`
+- Auth: `/api/auth/*`
+- NOC Management: `/api/noc/*`
+
+## Environment Variables Reference
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `NODE_ENV` | Environment mode | Yes |
+| `PORT` | Server port (Render uses 10000) | Yes |
+| `MONGODB_URI` | MongoDB Atlas connection string | Yes |
+| `JWT_SECRET` | Secret key for JWT tokens | Yes |
+| `GOOGLE_CLIENT_ID` | Google OAuth client ID | Yes |
+| `FRONTEND_URL` | Frontend URL for CORS | Optional |
+
+Your Digital NOC Management System is now ready for production! 🚀
