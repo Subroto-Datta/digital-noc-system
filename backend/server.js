@@ -81,10 +81,14 @@ app.get('/api/debug', (req, res) => {
 
 // Serve static files from React build - force production mode on Render
 const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER || process.env.PORT;
+const buildPath = path.join(__dirname, '../frontend/build');
+
+console.log(`Environment: ${process.env.NODE_ENV}`);
+console.log(`Is Production: ${isProduction}`);
+console.log(`Build Path: ${buildPath}`);
 
 if (isProduction) {
   // Serve static files from the React app build directory
-  const buildPath = path.join(__dirname, '../frontend/build');
   console.log(`Serving static files from: ${buildPath}`);
   app.use(express.static(buildPath));
   
@@ -95,8 +99,13 @@ if (isProduction) {
       return res.status(404).json({ message: 'API route not found' });
     }
     const indexPath = path.join(buildPath, 'index.html');
-    console.log(`Serving index.html from: ${indexPath}`);
-    res.sendFile(indexPath);
+    console.log(`Serving index.html for ${req.path} from: ${indexPath}`);
+    res.sendFile(indexPath, (err) => {
+      if (err) {
+        console.error('Error serving index.html:', err);
+        res.status(500).json({ message: 'Error serving frontend', error: err.message });
+      }
+    });
   });
 } else {
   // Development mode - just return a message for non-API routes
