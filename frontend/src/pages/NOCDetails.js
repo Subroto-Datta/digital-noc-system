@@ -111,7 +111,11 @@ const NOCDetails = () => {
         responseType: 'blob'
       });
       
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      // For PDFs, create a proper blob URL
+      const blob = new Blob([response.data], { 
+        type: filename.toLowerCase().endsWith('.pdf') ? 'application/pdf' : response.headers['content-type'] || 'application/octet-stream'
+      });
+      const url = window.URL.createObjectURL(blob);
       setViewingModal({ show: true, url, filename });
     } catch (error) {
       console.error('Error viewing file:', error);
@@ -579,20 +583,105 @@ const NOCDetails = () => {
             <div className="bg-white rounded-lg max-w-4xl w-full max-h-full overflow-auto">
               <div className="flex items-center justify-between p-6 border-b border-gray-200">
                 <h2 className="text-xl font-semibold text-gray-900">Viewing: {viewingModal.filename}</h2>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setViewingModal({ show: false, url: '', filename: '' })}
-                >
-                  <XCircle className="h-5 w-5" />
-                </Button>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open(viewingModal.url, '_blank')}
+                    className="flex items-center space-x-1"
+                  >
+                    <Eye className="h-4 w-4" />
+                    <span>Open in New Tab</span>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setViewingModal({ show: false, url: '', filename: '' })}
+                  >
+                    <XCircle className="h-5 w-5" />
+                  </Button>
+                </div>
               </div>
               <div className="p-6">
-                <iframe
-                  src={viewingModal.url}
-                  className="w-full h-96 border border-gray-200 rounded"
-                  title={viewingModal.filename}
-                />
+                {viewingModal.filename.toLowerCase().match(/\.(png|jpg|jpeg|gif|webp)$/) ? (
+                  <img
+                    src={viewingModal.url}
+                    alt={viewingModal.filename}
+                    className="w-full h-auto max-h-96 object-contain border border-gray-200 rounded"
+                    onError={(e) => {
+                      console.error('Error loading image:', e);
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'block';
+                    }}
+                  />
+                ) : viewingModal.filename.toLowerCase().endsWith('.pdf') ? (
+                  <div className="w-full h-96 border border-gray-200 rounded bg-gray-50">
+                    <iframe
+                      src={viewingModal.url}
+                      className="w-full h-full"
+                      title={viewingModal.filename}
+                      onLoad={(e) => {
+                        // Hide fallback if iframe loads successfully
+                        const fallback = e.target.nextSibling;
+                        if (fallback) {
+                          fallback.style.display = 'none';
+                        }
+                      }}
+                      onError={(e) => {
+                        console.error('PDF iframe error:', e);
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                    <div className="hidden w-full h-full items-center justify-center">
+                      <div className="text-center">
+                        <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-600 mb-2">PDF preview not available</p>
+                        <p className="text-sm text-gray-500 mb-4">Use the buttons above to view or download the PDF</p>
+                        <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                          <Button
+                            onClick={() => window.open(viewingModal.url, '_blank')}
+                            className="flex items-center space-x-1"
+                          >
+                            <Eye className="h-4 w-4" />
+                            <span>View in New Tab</span>
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              const link = document.createElement('a');
+                              link.href = viewingModal.url;
+                              link.download = viewingModal.filename;
+                              link.click();
+                            }}
+                            className="flex items-center space-x-1"
+                          >
+                            <Download className="h-4 w-4" />
+                            <span>Download PDF</span>
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-96 border border-gray-200 rounded bg-gray-50">
+                    <div className="text-center">
+                      <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-600 mb-2">Preview not available for this file type</p>
+                      <Button
+                        onClick={() => {
+                          const link = document.createElement('a');
+                          link.href = viewingModal.url;
+                          link.download = viewingModal.filename;
+                          link.click();
+                        }}
+                        className="mt-2"
+                      >
+                        Download File
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
