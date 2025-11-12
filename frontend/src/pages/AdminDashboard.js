@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
@@ -58,10 +59,13 @@ const AdminDashboard = () => {
   });
 
   useEffect(() => {
-    fetchNOCRequests();
-    fetchStats();
-    fetchAnalytics();
-  }, [filters]);
+    const fetchData = async () => {
+      await fetchNOCRequests();
+      await fetchStats();
+      await fetchAnalytics();
+    };
+    fetchData();
+  }, [filters]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchNOCRequests = async () => {
     try {

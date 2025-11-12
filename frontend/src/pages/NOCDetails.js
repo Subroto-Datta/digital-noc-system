@@ -1,9 +1,11 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 import LoadingSpinner from '../components/LoadingSpinner';
 import CertificateGenerator from '../components/CertificateGenerator';
+import DocumentViewer from '../components/DocumentViewer';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
@@ -39,7 +41,11 @@ const NOCDetails = () => {
   const [updating, setUpdating] = useState(false);
   const [downloading, setDownloading] = useState({});
   const [viewing, setViewing] = useState({});
-  const [viewingModal, setViewingModal] = useState({ show: false, url: '', filename: '' });
+  const [documentViewer, setDocumentViewer] = useState({ 
+    isOpen: false, 
+    filename: '', 
+    viewUrl: '' 
+  });
   const [showCertificate, setShowCertificate] = useState(false);
   const [updateData, setUpdateData] = useState({
     status: '',
@@ -47,24 +53,24 @@ const NOCDetails = () => {
   });
 
   useEffect(() => {
+    const fetchNOCRequest = async () => {
+      try {
+        const response = await axios.get(`/api/noc/${id}`);
+        setNocRequest(response.data.nocRequest);
+        setUpdateData({
+          status: response.data.nocRequest.status,
+          reviewComments: response.data.nocRequest.reviewComments || ''
+        });
+      } catch (error) {
+        console.error('Error fetching NOC request:', error);
+        setError('Failed to load NOC request');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchNOCRequest();
   }, [id]);
-
-  const fetchNOCRequest = async () => {
-    try {
-      const response = await axios.get(`/api/noc/${id}`);
-      setNocRequest(response.data.nocRequest);
-      setUpdateData({
-        status: response.data.nocRequest.status,
-        reviewComments: response.data.nocRequest.reviewComments || ''
-      });
-    } catch (error) {
-      console.error('Error fetching NOC request:', error);
-      setError('Failed to load NOC request');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleStatusUpdate = async (e) => {
     e.preventDefault();
@@ -107,19 +113,44 @@ const NOCDetails = () => {
   const handleView = async (filename) => {
     setViewing(prev => ({ ...prev, [filename]: true }));
     try {
+      // Try axios first to get the blob, then create object URL
       const response = await axios.get(`/api/noc/view/${filename}`, {
-        responseType: 'blob'
+        responseType: 'blob',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
       });
       
-      // For PDFs, create a proper blob URL
+      // Create blob URL for viewing
       const blob = new Blob([response.data], { 
-        type: filename.toLowerCase().endsWith('.pdf') ? 'application/pdf' : response.headers['content-type'] || 'application/octet-stream'
+        type: response.headers['content-type'] || 'application/octet-stream' 
       });
-      const url = window.URL.createObjectURL(blob);
-      setViewingModal({ show: true, url, filename });
+      const viewUrl = window.URL.createObjectURL(blob);
+      
+      setDocumentViewer({ 
+        isOpen: true, 
+        filename, 
+        viewUrl 
+      });
     } catch (error) {
       console.error('Error viewing file:', error);
-      setError('Failed to view file');
+      // Fallback: try direct URL approach
+      try {
+        const token = localStorage.getItem('token');
+        const apiUrl = process.env.NODE_ENV === 'production' && !process.env.REACT_APP_API_URL 
+          ? '' // Use relative URLs for same-domain deployment
+          : process.env.REACT_APP_API_URL || 'http://localhost:5000';
+        const baseURL = apiUrl;
+        const viewUrl = `${baseURL}/api/noc/view/${filename}?token=${token}`;
+        
+        setDocumentViewer({ 
+          isOpen: true, 
+          filename, 
+          viewUrl 
+        });
+      } catch (fallbackError) {
+        setError('Failed to view file. You can still download it.');
+      }
     } finally {
       setViewing(prev => ({ ...prev, [filename]: false }));
     }
@@ -207,10 +238,12 @@ const NOCDetails = () => {
 
   const getFileIcon = (filename) => {
     const extension = filename.split('.').pop().toLowerCase();
-    if (['jpg', 'jpeg', 'png', 'gif'].includes(extension)) {
-      return <FileImage className="h-4 w-4" />;
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension)) {
+      return <FileImage className="h-5 w-5 text-blue-500" />;
+    } else if (extension === 'pdf') {
+      return <FileText className="h-5 w-5 text-red-500" />;
     }
-    return <File className="h-4 w-4" />;
+    return <File className="h-5 w-5 text-gray-500" />;
   };
 
   if (loading) {
@@ -577,115 +610,20 @@ const NOCDetails = () => {
           </div>
         </div>
 
-        {/* Document Viewing Modal */}
-        {viewingModal.show && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-4xl w-full max-h-full overflow-auto">
-              <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                <h2 className="text-xl font-semibold text-gray-900">Viewing: {viewingModal.filename}</h2>
-                <div className="flex items-center space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => window.open(viewingModal.url, '_blank')}
-                    className="flex items-center space-x-1"
-                  >
-                    <Eye className="h-4 w-4" />
-                    <span>Open in New Tab</span>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setViewingModal({ show: false, url: '', filename: '' })}
-                  >
-                    <XCircle className="h-5 w-5" />
-                  </Button>
-                </div>
-              </div>
-              <div className="p-6">
-                {viewingModal.filename.toLowerCase().match(/\.(png|jpg|jpeg|gif|webp)$/) ? (
-                  <img
-                    src={viewingModal.url}
-                    alt={viewingModal.filename}
-                    className="w-full h-auto max-h-96 object-contain border border-gray-200 rounded"
-                    onError={(e) => {
-                      console.error('Error loading image:', e);
-                      e.target.style.display = 'none';
-                      e.target.nextSibling.style.display = 'block';
-                    }}
-                  />
-                ) : viewingModal.filename.toLowerCase().endsWith('.pdf') ? (
-                  <div className="w-full h-96 border border-gray-200 rounded bg-gray-50">
-                    <iframe
-                      src={viewingModal.url}
-                      className="w-full h-full"
-                      title={viewingModal.filename}
-                      onLoad={(e) => {
-                        // Hide fallback if iframe loads successfully
-                        const fallback = e.target.nextSibling;
-                        if (fallback) {
-                          fallback.style.display = 'none';
-                        }
-                      }}
-                      onError={(e) => {
-                        console.error('PDF iframe error:', e);
-                        e.target.style.display = 'none';
-                        e.target.nextSibling.style.display = 'flex';
-                      }}
-                    />
-                    <div className="hidden w-full h-full items-center justify-center">
-                      <div className="text-center">
-                        <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                        <p className="text-gray-600 mb-2">PDF preview not available</p>
-                        <p className="text-sm text-gray-500 mb-4">Use the buttons above to view or download the PDF</p>
-                        <div className="flex flex-col sm:flex-row gap-2 justify-center">
-                          <Button
-                            onClick={() => window.open(viewingModal.url, '_blank')}
-                            className="flex items-center space-x-1"
-                          >
-                            <Eye className="h-4 w-4" />
-                            <span>View in New Tab</span>
-                          </Button>
-                          <Button
-                            variant="outline"
-                            onClick={() => {
-                              const link = document.createElement('a');
-                              link.href = viewingModal.url;
-                              link.download = viewingModal.filename;
-                              link.click();
-                            }}
-                            className="flex items-center space-x-1"
-                          >
-                            <Download className="h-4 w-4" />
-                            <span>Download PDF</span>
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center h-96 border border-gray-200 rounded bg-gray-50">
-                    <div className="text-center">
-                      <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-600 mb-2">Preview not available for this file type</p>
-                      <Button
-                        onClick={() => {
-                          const link = document.createElement('a');
-                          link.href = viewingModal.url;
-                          link.download = viewingModal.filename;
-                          link.click();
-                        }}
-                        className="mt-2"
-                      >
-                        Download File
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Document Viewer */}
+        <DocumentViewer
+          isOpen={documentViewer.isOpen}
+          filename={documentViewer.filename}
+          viewUrl={documentViewer.viewUrl}
+          onClose={() => {
+            // Clean up blob URL if it exists
+            if (documentViewer.viewUrl && documentViewer.viewUrl.startsWith('blob:')) {
+              window.URL.revokeObjectURL(documentViewer.viewUrl);
+            }
+            setDocumentViewer({ isOpen: false, filename: '', viewUrl: '' });
+          }}
+          onDownload={() => handleDownload(documentViewer.filename)}
+        />
 
         {/* Certificate Generator Modal */}
         {showCertificate && (

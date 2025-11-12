@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const path = require('path');
 require('dotenv').config();
 
 const authRoutes = require('./routes/auth');
@@ -21,8 +22,14 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // CORS configuration
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://digital-noc-system.onrender.com', // Updated for full-stack deployment
+  process.env.FRONTEND_URL
+].filter(Boolean);
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: allowedOrigins,
   credentials: true
 }));
 
@@ -31,10 +38,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Database connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/noc_management', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/noc_management')
 .then(() => console.log('MongoDB connected successfully'))
 .catch(err => console.error('MongoDB connection error:', err));
 
@@ -51,6 +55,68 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Debug endpoint to check build files
+app.get('/api/debug', (req, res) => {
+  const buildPath = path.join(__dirname, '../frontend/build');
+  const fs = require('fs');
+  
+  try {
+    const buildExists = fs.existsSync(buildPath);
+    const indexExists = fs.existsSync(path.join(buildPath, 'index.html'));
+    const files = buildExists ? fs.readdirSync(buildPath) : [];
+    
+    res.json({
+      environment: process.env.NODE_ENV,
+      port: process.env.PORT,
+      render: !!process.env.RENDER,
+      buildPath,
+      buildExists,
+      indexExists,
+      files: files.slice(0, 10) // First 10 files
+    });
+  } catch (error) {
+    res.json({ error: error.message });
+  }
+});
+
+// Serve static files from React build - force production mode on Render
+const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER || process.env.PORT;
+const buildPath = path.join(__dirname, '../frontend/build');
+
+console.log(`Environment: ${process.env.NODE_ENV}`);
+console.log(`Is Production: ${isProduction}`);
+console.log(`Build Path: ${buildPath}`);
+
+if (isProduction) {
+  // Serve static files from the React app build directory
+  console.log(`Serving static files from: ${buildPath}`);
+  app.use(express.static(buildPath));
+  
+  // Catch all handler: send back React's index.html file for any non-API routes
+  app.get('*', (req, res) => {
+    // Skip API routes
+    if (req.path.startsWith('/api/')) {
+      return res.status(404).json({ message: 'API route not found' });
+    }
+    const indexPath = path.join(buildPath, 'index.html');
+    console.log(`Serving index.html for ${req.path} from: ${indexPath}`);
+    res.sendFile(indexPath, (err) => {
+      if (err) {
+        console.error('Error serving index.html:', err);
+        res.status(500).json({ message: 'Error serving frontend', error: err.message });
+      }
+    });
+  });
+} else {
+  // Development mode - just return a message for non-API routes
+  app.get('*', (req, res) => {
+    if (req.path.startsWith('/api/')) {
+      return res.status(404).json({ message: 'API route not found' });
+    }
+    res.json({ message: 'API is running. Frontend should be served separately in development.' });
+  });
+}
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
@@ -58,11 +124,6 @@ app.use((err, req, res, next) => {
     message: 'Something went wrong!',
     error: process.env.NODE_ENV === 'development' ? err.message : {}
   });
-});
-
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({ message: 'Route not found' });
 });
 
 const PORT = process.env.PORT || 5000;

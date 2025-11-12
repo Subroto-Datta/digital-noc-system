@@ -171,10 +171,26 @@ router.get('/download/:filename', auth, async (req, res) => {
 // @route   GET /api/noc/view/:filename
 // @desc    View a document in browser
 // @access  Private
-router.get('/view/:filename', auth, async (req, res) => {
+router.get('/view/:filename', async (req, res) => {
   try {
     const filename = req.params.filename;
     const filePath = path.join(__dirname, '../uploads/noc-documents', filename);
+    
+    // Check authorization from either header or query parameter (for iframe)
+    const token = req.headers.authorization?.replace('Bearer ', '') || req.query.token;
+    
+    if (!token) {
+      return res.status(401).json({ message: 'Access denied. No token provided.' });
+    }
+
+    // Verify token
+    try {
+      const jwt = require('jsonwebtoken');
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+      req.user = decoded;
+    } catch (error) {
+      return res.status(401).json({ message: 'Invalid token.' });
+    }
     
     console.log('View request for:', filename);
     console.log('File path:', filePath);
@@ -205,11 +221,23 @@ router.get('/view/:filename', auth, async (req, res) => {
     console.log('Content type:', contentType);
     console.log('File extension:', ext);
     
-    // Set appropriate headers for viewing
+    // Set appropriate headers for viewing inline with better CORS support
     res.setHeader('Content-Type', contentType);
     res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Cache-Control', 'public, max-age=86400'); // 1 day cache
+    res.setHeader('Access-Control-Allow-Origin', '*'); // Allow all origins for file viewing
+    res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    
+    // Handle preflight OPTIONS request
+    if (req.method === 'OPTIONS') {
+      return res.status(200).end();
+    }
+    
+    // Get file stats for content length
+    const stats = fs.statSync(filePath);
+    res.setHeader('Content-Length', stats.size);
     
     // Stream the file
     const fileStream = fs.createReadStream(filePath);

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -28,13 +29,16 @@ const Dashboard = () => {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (user && user._id) {
-      // Only fetch NOC requests for students
-      if (user.role === 'student') {
-        fetchNOCRequests();
+    const fetchData = async () => {
+      if (user && user._id) {
+        // Only fetch NOC requests for students
+        if (user.role === 'student') {
+          await fetchNOCRequests();
+        }
       }
-    }
-  }, [user]);
+    };
+    fetchData();
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Redirect faculty/admin to admin dashboard
   if (user && user.role !== 'student') {

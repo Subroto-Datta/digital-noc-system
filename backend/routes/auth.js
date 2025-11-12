@@ -2,9 +2,11 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
-const { auth } = require('../middleware/auth');
+const { auth, authorize } = require('../middleware/auth');
+const { OAuth2Client } = require('google-auth-library');
 
 const router = express.Router();
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Generate JWT token
 const generateToken = (userId) => {
@@ -34,8 +36,8 @@ router.post('/signup', [
     .withMessage('Department is required'),
   body('role')
     .optional()
-    .isIn(['student', 'faculty', 'admin'])
-    .withMessage('Invalid role'),
+    .isIn(['student', 'faculty'])
+    .withMessage('Invalid role. Admin access is not available for signup'),
   body('studentId')
     .optional()
     .trim()
@@ -57,6 +59,13 @@ router.post('/signup', [
     }
 
     const { name, email, password, department, role = 'student', studentId } = req.body;
+    
+    // Ensure no one can sign up as admin
+    if (role === 'admin') {
+      return res.status(400).json({ 
+        message: 'Admin access is not available for signup. Contact IT department for admin privileges.' 
+      });
+    }
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -259,4 +268,157 @@ router.put('/profile', auth, [
   }
 });
 
+// @route   POST /api/auth/google
+// @desc    Google Sign-In: verify ID token and issue JWT (create user if needed)
+// @access  Public
+router.post('/google', [
+  body('idToken')
+    .notEmpty()
+    .withMessage('Google ID token is required'),
+  body('role')
+    .optional()
+    .isIn(['student', 'faculty'])
+    .withMessage('Invalid role. Admin access is not available via Google signup'),
+  body('department')
+    .optional()
+    .trim()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ message: 'Validation failed', errors: errors.array() });
+    }
+
+    if (!process.env.GOOGLE_CLIENT_ID) {
+      return res.status(500).json({ message: 'Google auth not configured (missing GOOGLE_CLIENT_ID)' });
+    }
+
+    const { idToken, role = 'student', department, studentId } = req.body;
+
+    const ticket = await googleClient.verifyIdToken({ idToken, audience: process.env.GOOGLE_CLIENT_ID });
+    const payload = ticket.getPayload();
+
+    if (!payload || !payload.email) {
+      return res.status(400).json({ message: 'Invalid Google token payload' });
+    }
+
+    const email = payload.email.toLowerCase();
+    const name = payload.name || email.split('@')[0];
+
+    // Find or create user
+    let user = await User.findOne({ email });
+    if (!user) {
+      // Create a random password; user can set one later if needed
+      const randomPassword = Math.random().toString(36).slice(-12) + Date.now().toString(36);
+
+      user = new User({
+        name,
+        email,
+        password: randomPassword,
+        department: department && department.trim() ? department.trim() : 'General',
+        role,
+        studentId: role === 'student' ? studentId : undefined
+      });
+      await user.save();
+    } else {
+      // Ensure deactivated accounts cannot login
+      if (!user.isActive) {
+        return res.status(401).json({ message: 'Account is deactivated. Please contact administrator.' });
+      }
+      // Update last login
+      user.lastLogin = new Date();
+      await user.save();
+    }
+
+    const token = generateToken(user._id);
+    return res.json({
+      message: 'Login successful',
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        department: user.department,
+        studentId: user.studentId
+      }
+    });
+  } catch (error) {
+    console.error('Google auth error:', error);
+    return res.status(500).json({ message: 'Server error during Google authentication' });
+  }
+});
+
+// @route   POST /api/auth/create-admin
+// @desc    Create admin user (IT department only)
+// @access  Private (Admin only)
+router.post('/create-admin', [
+  auth,
+  authorize('admin'),
+  body('name')
+    .trim()
+    .isLength({ min: 2, max: 50 })
+    .withMessage('Name must be between 2 and 50 characters'),
+  body('email')
+    .isEmail()
+    .normalizeEmail()
+    .withMessage('Please provide a valid email'),
+  body('password')
+    .isLength({ min: 6 })
+    .withMessage('Password must be at least 6 characters long'),
+  body('department')
+    .trim()
+    .notEmpty()
+    .withMessage('Department is required'),
+  body('role')
+    .isIn(['admin'])
+    .withMessage('This endpoint is only for creating admin users')
+], async (req, res) => {
+  try {
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
+    const { name, email, password, department } = req.body;
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: 'User already exists with this email' });
+    }
+
+    // Create new admin user
+    const user = new User({
+      name,
+      email,
+      password,
+      department,
+      role: 'admin'
+    });
+
+    await user.save();
+
+    res.status(201).json({
+      message: 'Admin user created successfully',
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        department: user.department
+      }
+    });
+
+  } catch (error) {
+    console.error('Admin creation error:', error);
+    res.status(500).json({ message: 'Server error during admin creation' });
+  }
+});
+
 module.exports = router;
+ 
