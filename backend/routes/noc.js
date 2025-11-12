@@ -521,7 +521,7 @@ router.get('/stats/overview', auth, authorize('faculty', 'admin'), async (req, r
 // @route   POST /api/noc/email-certificate
 // @desc    Email NOC certificate to student
 // @access  Private (Faculty/Admin only)
-router.post('/email-certificate', auth, authorize(['faculty', 'admin']), async (req, res) => {
+router.post('/email-certificate', auth, authorize('faculty', 'admin'), async (req, res) => {
   try {
     const { nocId, studentEmail } = req.body;
     
@@ -556,7 +556,7 @@ router.post('/email-certificate', auth, authorize(['faculty', 'admin']), async (
       subject: `NOC Certificate - ${nocRequest.title}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #2563eb;">NOC Certificate Ready</h2>
+          <h2 style="color: #2563eb;">NOC Certificate Approved</h2>
           <p>Dear ${nocRequest.student.name},</p>
           <p>Your No Objection Certificate for <strong>${nocRequest.title}</strong> has been approved and is ready for download.</p>
           
@@ -566,25 +566,18 @@ router.post('/email-certificate', auth, authorize(['faculty', 'admin']), async (
               <li><strong>Purpose:</strong> ${nocRequest.purpose.replace('_', ' ').toUpperCase()}</li>
               <li><strong>Department:</strong> ${nocRequest.department}</li>
               <li><strong>Approved Date:</strong> ${new Date(nocRequest.updatedAt).toLocaleDateString()}</li>
-              <li><strong>Certificate ID:</strong> NOC-${nocRequest._id.slice(-8).toUpperCase()}</li>
+              <li><strong>Certificate ID:</strong> NOC-${nocRequest._id.toString().slice(-8).toUpperCase()}</li>
             </ul>
           </div>
           
-          <p>The certificate is attached to this email. You can also download it from your dashboard.</p>
+          <p>Please log in to your dashboard to download and print your certificate.</p>
           
           <p>If you have any questions, please contact the administration office.</p>
           
           <p>Best regards,<br>
           College Administration</p>
         </div>
-      `,
-      attachments: [
-        {
-          filename: `NOC_Certificate_${nocRequest._id}.pdf`,
-          content: req.files.certificate.data,
-          contentType: 'application/pdf'
-        }
-      ]
+      `
     };
 
     // Send email

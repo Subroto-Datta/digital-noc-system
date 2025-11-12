@@ -90,7 +90,7 @@ This certificate is issued for the purpose mentioned in the application and is v
       {/* Certificate Title */}
       <div className="text-center mb-8">
         <h1 className="text-2xl font-bold text-gray-900 mb-4">{purposeContent.title}</h1>
-        <p className="text-sm text-gray-600">Certificate No: NOC-{nocRequest._id.slice(-8).toUpperCase()}</p>
+        <p className="text-sm text-gray-600">Certificate No: NOC-{nocRequest._id.toString().slice(-8).toUpperCase()}</p>
         <p className="text-sm text-gray-600">Date: {currentDate}</p>
       </div>
 

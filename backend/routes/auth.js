@@ -3,10 +3,8 @@ const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const { auth, authorize } = require('../middleware/auth');
-const { OAuth2Client } = require('google-auth-library');
 
 const router = express.Router();
-const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Generate JWT token
 const generateToken = (userId) => {
@@ -265,87 +263,6 @@ router.put('/profile', auth, [
   } catch (error) {
     console.error('Profile update error:', error);
     res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// @route   POST /api/auth/google
-// @desc    Google Sign-In: verify ID token and issue JWT (create user if needed)
-// @access  Public
-router.post('/google', [
-  body('idToken')
-    .notEmpty()
-    .withMessage('Google ID token is required'),
-  body('role')
-    .optional()
-    .isIn(['student', 'faculty'])
-    .withMessage('Invalid role. Admin access is not available via Google signup'),
-  body('department')
-    .optional()
-    .trim()
-], async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ message: 'Validation failed', errors: errors.array() });
-    }
-
-    if (!process.env.GOOGLE_CLIENT_ID) {
-      return res.status(500).json({ message: 'Google auth not configured (missing GOOGLE_CLIENT_ID)' });
-    }
-
-    const { idToken, role = 'student', department, studentId } = req.body;
-
-    const ticket = await googleClient.verifyIdToken({ idToken, audience: process.env.GOOGLE_CLIENT_ID });
-    const payload = ticket.getPayload();
-
-    if (!payload || !payload.email) {
-      return res.status(400).json({ message: 'Invalid Google token payload' });
-    }
-
-    const email = payload.email.toLowerCase();
-    const name = payload.name || email.split('@')[0];
-
-    // Find or create user
-    let user = await User.findOne({ email });
-    if (!user) {
-      // Create a random password; user can set one later if needed
-      const randomPassword = Math.random().toString(36).slice(-12) + Date.now().toString(36);
-
-      user = new User({
-        name,
-        email,
-        password: randomPassword,
-        department: department && department.trim() ? department.trim() : 'General',
-        role,
-        studentId: role === 'student' ? studentId : undefined
-      });
-      await user.save();
-    } else {
-      // Ensure deactivated accounts cannot login
-      if (!user.isActive) {
-        return res.status(401).json({ message: 'Account is deactivated. Please contact administrator.' });
-      }
-      // Update last login
-      user.lastLogin = new Date();
-      await user.save();
-    }
-
-    const token = generateToken(user._id);
-    return res.json({
-      message: 'Login successful',
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        department: user.department,
-        studentId: user.studentId
-      }
-    });
-  } catch (error) {
-    console.error('Google auth error:', error);
-    return res.status(500).json({ message: 'Server error during Google authentication' });
   }
 });
 

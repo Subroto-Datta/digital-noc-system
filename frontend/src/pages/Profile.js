@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Badge } from '../components/ui/badge';
+import LoadingSpinner from '../components/LoadingSpinner';
 import { 
   User, 
   Mail, 
@@ -14,13 +15,18 @@ import {
   UserCheck,
   Save,
   Edit,
-  ArrowLeft
+  ArrowLeft,
+  CheckCircle,
+  AlertCircle
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Profile = () => {
-  const { user } = useAuth();
+  const { user, updateProfile } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
@@ -28,17 +34,60 @@ const Profile = () => {
     studentId: user?.studentId || ''
   });
 
+  // Update form data when user changes
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        name: user.name || '',
+        email: user.email || '',
+        department: user.department || '',
+        studentId: user.studentId || ''
+      });
+    }
+  }, [user]);
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
+    // Clear messages when user types
+    setError('');
+    setSuccess('');
   };
 
-  const handleSave = () => {
-    // In a real app, you'd make an API call to update the profile
-    console.log('Saving profile:', formData);
-    setIsEditing(false);
+  const handleSave = async () => {
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      // Only send fields that can be updated (not email)
+      const updateData = {
+        name: formData.name,
+        department: formData.department
+      };
+
+      // Only include studentId if user is a student
+      if (user?.role === 'student') {
+        updateData.studentId = formData.studentId;
+      }
+
+      const result = await updateProfile(updateData);
+      
+      if (result.success) {
+        setSuccess('Profile updated successfully!');
+        setIsEditing(false);
+        // Clear success message after 3 seconds
+        setTimeout(() => setSuccess(''), 3000);
+      } else {
+        setError(result.message || 'Failed to update profile');
+      }
+    } catch (err) {
+      setError('An unexpected error occurred');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getRoleIcon = (role) => {
@@ -140,6 +189,22 @@ const Profile = () => {
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
+                {/* Success Message */}
+                {success && (
+                  <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm flex items-center space-x-2">
+                    <CheckCircle className="h-4 w-4" />
+                    <span>{success}</span>
+                  </div>
+                )}
+
+                {/* Error Message */}
+                {error && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm flex items-center space-x-2">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>{error}</span>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="name" className="text-sm font-medium text-gray-700">
@@ -150,7 +215,7 @@ const Profile = () => {
                       name="name"
                       value={formData.name}
                       onChange={handleChange}
-                      disabled={!isEditing}
+                      disabled={!isEditing || loading}
                       className="h-11"
                     />
                   </div>
@@ -166,11 +231,12 @@ const Profile = () => {
                         name="email"
                         type="email"
                         value={formData.email}
-                        onChange={handleChange}
-                        disabled={!isEditing}
-                        className="pl-10 h-11"
+                        disabled={true}
+                        className="pl-10 h-11 bg-gray-50"
+                        title="Email cannot be changed"
                       />
                     </div>
+                    <p className="text-xs text-gray-500">Email cannot be changed</p>
                   </div>
 
                   <div className="space-y-2">
@@ -184,7 +250,7 @@ const Profile = () => {
                         name="department"
                         value={formData.department}
                         onChange={handleChange}
-                        disabled={!isEditing}
+                        disabled={!isEditing || loading}
                         className="pl-10 h-11"
                       />
                     </div>
@@ -202,7 +268,7 @@ const Profile = () => {
                           name="studentId"
                           value={formData.studentId}
                           onChange={handleChange}
-                          disabled={!isEditing}
+                          disabled={!isEditing || loading}
                           className="pl-10 h-11"
                         />
                       </div>
@@ -214,16 +280,38 @@ const Profile = () => {
                   <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
                     <Button
                       variant="outline"
-                      onClick={() => setIsEditing(false)}
+                      onClick={() => {
+                        setIsEditing(false);
+                        setError('');
+                        setSuccess('');
+                        // Reset form data to user data
+                        setFormData({
+                          name: user?.name || '',
+                          email: user?.email || '',
+                          department: user?.department || '',
+                          studentId: user?.studentId || ''
+                        });
+                      }}
+                      disabled={loading}
                     >
                       Cancel
                     </Button>
                     <Button
                       onClick={handleSave}
+                      disabled={loading}
                       className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
                     >
-                      <Save className="h-4 w-4 mr-2" />
-                      Save Changes
+                      {loading ? (
+                        <div className="flex items-center">
+                          <LoadingSpinner size="small" />
+                          <span className="ml-2">Saving...</span>
+                        </div>
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4 mr-2" />
+                          Save Changes
+                        </>
+                      )}
                     </Button>
                   </div>
                 )}

@@ -1,17 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { Badge } from '../components/ui/badge';
 import { GraduationCap, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 
 const Login = () => {
-  const { login, googleLogin, user } = useAuth();
+  const { login, user } = useAuth();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
@@ -53,23 +51,6 @@ const Login = () => {
     }
     
     setLoading(false);
-  };
-
-  const handleGoogleSuccess = async (credentialResponse) => {
-    setLoading(true);
-    setError('');
-    
-    const result = await googleLogin(credentialResponse);
-    
-    if (!result.success) {
-      setError(result.message);
-    }
-    
-    setLoading(false);
-  };
-
-  const handleGoogleError = () => {
-    setError('Google login failed. Please try again.');
   };
 
   return (
@@ -167,30 +148,7 @@ const Login = () => {
               </Button>
             </form>
 
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-gray-200" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-gray-500">Or continue with</span>
-              </div>
-            </div>
-
-            {/* Google Login Button */}
-            <div className="w-full">
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={handleGoogleError}
-                useOneTap={false}
-                theme="outline"
-                size="large"
-                width="100%"
-                text="signin_with"
-                shape="rectangular"
-              />
-            </div>
-
-            <div className="text-center">
+            <div className="text-center mt-4">
               <p className="text-sm text-gray-600">
                 Don't have an account?{' '}
                 <Link

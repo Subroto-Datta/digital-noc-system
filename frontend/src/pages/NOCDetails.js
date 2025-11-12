@@ -433,7 +433,8 @@ const NOCDetails = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {nocRequest.attachments.map((attachment, index) => (
+                    {nocRequest.attachments && nocRequest.attachments.length > 0 ? (
+                      nocRequest.attachments.map((attachment, index) => (
                       <div key={index} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                         <div className="flex items-center space-x-3">
                           {getFileIcon(attachment.originalName)}
@@ -477,7 +478,13 @@ const NOCDetails = () => {
                           </Button>
                         </div>
                       </div>
-                    ))}
+                    ))
+                    ) : (
+                      <div className="text-center py-8">
+                        <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-600">No documents attached</p>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>

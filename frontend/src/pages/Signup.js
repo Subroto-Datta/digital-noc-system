@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { Button } from '../components/ui/button';
@@ -11,7 +10,7 @@ import { Badge } from '../components/ui/badge';
 import { GraduationCap, User, Mail, Building, Shield, Eye, EyeOff, UserCheck } from 'lucide-react';
 
 const Signup = () => {
-  const { signup, googleLogin, user } = useAuth();
+  const { signup, user } = useAuth();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
@@ -26,8 +25,6 @@ const Signup = () => {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [showGoogleSignupForm, setShowGoogleSignupForm] = useState(false);
-  const [googleCredential, setGoogleCredential] = useState(null);
 
   // Redirect after successful signup
   useEffect(() => {
@@ -81,34 +78,6 @@ const Signup = () => {
     }
     
     setLoading(false);
-  };
-
-  const handleGoogleSuccess = async (credentialResponse) => {
-    // For Google signup, we need additional information
-    setGoogleCredential(credentialResponse);
-    setShowGoogleSignupForm(true);
-  };
-
-  const handleGoogleSignup = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    
-    const result = await googleLogin(googleCredential, {
-      role: formData.role,
-      department: formData.department,
-      studentId: formData.role === 'student' ? formData.studentId : undefined
-    });
-    
-    if (!result.success) {
-      setError(result.message);
-    }
-    
-    setLoading(false);
-  };
-
-  const handleGoogleError = () => {
-    setError('Google signup failed. Please try again.');
   };
 
   const getRoleIcon = (role) => {
@@ -348,122 +317,7 @@ const Signup = () => {
               </Button>
             </form>
 
-            {!showGoogleSignupForm && (
-              <>
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t border-gray-200" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-white px-2 text-gray-500">Or continue with</span>
-                  </div>
-                </div>
-
-                {/* Google Signup Button */}
-                <div className="w-full">
-                  <GoogleLogin
-                    onSuccess={handleGoogleSuccess}
-                    onError={handleGoogleError}
-                    useOneTap={false}
-                    theme="outline"
-                    size="large"
-                    width="100%"
-                    text="signup_with"
-                    shape="rectangular"
-                  />
-                </div>
-              </>
-            )}
-
-            {showGoogleSignupForm && (
-              <>
-                <div className="p-4 bg-blue-50 rounded-lg">
-                  <p className="text-sm text-blue-700 text-center mb-4">
-                    Complete your Google signup by providing additional information:
-                  </p>
-                  <form onSubmit={handleGoogleSignup} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="google-role" className="text-sm font-medium text-gray-700">
-                        Role
-                      </Label>
-                      <select
-                        id="google-role"
-                        name="role"
-                        required
-                        className="w-full p-2 border border-gray-200 rounded-md focus:border-blue-500 focus:ring-blue-500"
-                        value={formData.role}
-                        onChange={handleChange}
-                      >
-                        <option value="student">Student</option>
-                        <option value="faculty">Faculty</option>
-                      </select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="google-department" className="text-sm font-medium text-gray-700">
-                        Department
-                      </Label>
-                      <Input
-                        id="google-department"
-                        name="department"
-                        type="text"
-                        required
-                        className="h-11 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                        placeholder="Enter your department"
-                        value={formData.department}
-                        onChange={handleChange}
-                      />
-                    </div>
-
-                    {formData.role === 'student' && (
-                      <div className="space-y-2">
-                        <Label htmlFor="google-studentId" className="text-sm font-medium text-gray-700">
-                          Student ID (Optional)
-                        </Label>
-                        <Input
-                          id="google-studentId"
-                          name="studentId"
-                          type="text"
-                          className="h-11 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                          placeholder="Enter your student ID"
-                          value={formData.studentId}
-                          onChange={handleChange}
-                        />
-                      </div>
-                    )}
-
-                    <Button 
-                      type="submit" 
-                      className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white"
-                      disabled={loading}
-                    >
-                      {loading ? (
-                        <div className="flex items-center">
-                          <LoadingSpinner size="small" />
-                          <span className="ml-2">Completing signup...</span>
-                        </div>
-                      ) : (
-                        'Complete Google Signup'
-                      )}
-                    </Button>
-
-                    <Button 
-                      type="button" 
-                      variant="outline"
-                      className="w-full h-11"
-                      onClick={() => {
-                        setShowGoogleSignupForm(false);
-                        setGoogleCredential(null);
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                  </form>
-                </div>
-              </>
-            )}
-
-            <div className="relative">
+            <div className="relative mt-6">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t border-gray-200" />
               </div>
@@ -472,7 +326,7 @@ const Signup = () => {
               </div>
             </div>
 
-            <div className="text-center">
+            <div className="text-center mt-4">
               <Link
                 to="/login"
                 className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors"

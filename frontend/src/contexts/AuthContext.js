@@ -96,29 +96,6 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
-  const googleLogin = async (credentialResponse, additionalData = {}) => {
-    try {
-      const response = await axios.post('/api/auth/google', {
-        idToken: credentialResponse.credential,
-        ...additionalData
-      });
-      
-      const { token, user } = response.data;
-      
-      localStorage.setItem('token', token);
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      setUser(user);
-      
-      return { success: true };
-    } catch (error) {
-      console.error('Google login error:', error);
-      return { 
-        success: false, 
-        message: error.response?.data?.message || 'Google login failed' 
-      };
-    }
-  };
-
   const updateProfile = async (profileData) => {
     try {
       const response = await axios.put('/api/auth/profile', profileData);
@@ -139,7 +116,6 @@ export const AuthProvider = ({ children }) => {
     login,
     signup,
     logout,
-    googleLogin,
     updateProfile
   };
 
